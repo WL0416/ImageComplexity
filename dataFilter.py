@@ -2,6 +2,7 @@ import xlrd
 import xlwt
 
 file = ".\\Data\\Shivy_Wei_Eye_Tracking_Data_12APR17.xlsx"
+output = ".\\Data\\NewData.xls"
 columnsFilter = ['MediaName','LocalTimeStamp','GazeEventType','GazeEventDuration','GazePointIndex','GazePointX (MCSpx)','GazePointY (MCSpx)']
 
 def open_excel(file):
@@ -32,6 +33,6 @@ def excel_filter(file, columnsFilter):
                     indexR = 0
                     indexC += 1
                 break
-    book.save(".\\Data\\NewData.xls")
+    book.save(output)
 
 excel_filter(file, columnsFilter)

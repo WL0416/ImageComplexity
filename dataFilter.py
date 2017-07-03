@@ -32,6 +32,6 @@ def excel_filter(file, columnsFilter):
                     indexR = 0
                     indexC += 1
                 break
-    book.save("NewData.xls")
+    book.save(".\\Data\\NewData.xls")
 
 excel_filter(file, columnsFilter)

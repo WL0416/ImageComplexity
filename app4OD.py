@@ -171,6 +171,9 @@ mainframe.rowconfigure(0, weight=1)
 # option draw-down box
 filename = StringVar(mainframe, value='Select a user')
 users = ttk.Combobox(mainframe, textvariable=filename)
+getUsers()
+users.current(0)
+users.bind("<<ComboboxSelected>>", getUsers)
 users.grid(column=0, row=0, sticky=W)
 
 # refresh button, scan users and initialise the app

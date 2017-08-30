@@ -1,9 +1,9 @@
 import xlrd
 import xlwt
 
-file = ".\\Data\\Shivy_Wei_Eye_Tracking_Data_12APR17.xlsx"
+file = ".\\Data\\IJCAI_1.xlsx"
 output = ".\\Data\\NewData.xls"
-columnsFilter = ['MediaName','LocalTimeStamp','GazeEventType','GazeEventDuration','GazePointIndex','GazePointX (MCSpx)','GazePointY (MCSpx)']
+columnsFilter = ['MediaName','LocalTimeStamp','GazeEventType','GazeEventDuration','GazePointIndex','GazePointX (MCSpx)','GazePointY (MCSpx)','MediaWidth','MediaHeight']
 
 def open_excel(file):
     try:

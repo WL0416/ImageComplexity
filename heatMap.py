@@ -1,8 +1,10 @@
 from pyheatmap.heatmap import HeatMap
-import xlrd
-import os
 import numpy as np
 import cv2 as cv
+import math, string, os, xlrd
+
+
+# This is for generating the heat-map of salience map and complexity map
 
 outputpath = ".\\heatmaps\\"
 file = ".\\Data\\NewData.xls"
@@ -108,6 +110,7 @@ def heatmap(combinedata):
 
         index += 1
 
+# overlap two images together
 def overlay():
     for root, folders, files in os.walk(imagespath):
         # loop the images
@@ -119,6 +122,7 @@ def overlay():
             imagemap = cv.addWeighted(map,0.5,image,0.5,0)
             cv.imwrite(overlaypath + imagename + ".jpg",imagemap)
 
+# this function is used to combine some data file together.
 def combine():
     combineddata = []
     name = []
@@ -143,12 +147,56 @@ def combine():
     combineddata.append(gazeY)
     return combineddata
 
+
+# calculate the range to data, if the image is grayscale, the range is 0 -> 255
+def range_bytes():
+    return range(256)
+
+
+# Entropy calculation function, based on Shannon Information Theory
+def H(data, iterator=range_bytes):
+    if not data:
+        return 0
+    entropy = 0
+    for x in iterator():
+        p_x = float(data.count(x))/len(data)
+        if p_x > 0:
+            current = - p_x*math.log(p_x, 2)
+            print(current)
+            entropy += current
+    return entropy
+
+# image complexity heat-map
+def calculateComplexity(method):
+    pixelcount = 0
+    if method == "Entropy": # Entropy
+        image = cv.imread(".\\images\\30.jpg")
+        container = []
+        line = []
+        # loop the image matrix
+        for row in image:
+            if len(line) != 0:
+                container.append(line)
+                line =[]
+            for pixel in row:
+                for color in pixel:
+                    line.append(color)
+                    pixelcount += 1
+                    break # grey scale image, R,G,B have the same value
+        for eachline in container:
+            print(eachline)
+        print(pixelcount)
+
+
 def main():
-    combinedata = combine()
+    #combinedata = combine()
     # generate heat maps
-    heatmap(combinedata)
+    #heatmap(combinedata)
     # overlay heat maps with original images
-    overlay()
+    #overlay()
+    calculateComplexity("Entropy")
+    data = [216,123,216,216,216,216]
+    print(H(data))
 
 if __name__ == "__main__":
     main()

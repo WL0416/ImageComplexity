@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 # This is for generating the heat-map of salience map and complexity map
 
+complexitypath = ".\\imageComp\\"
 outputpath = ".\\heatmaps\\"
 file = ".\\Data\\NewData.xls"
 imagespath = ".\\images\\"
@@ -112,7 +113,7 @@ def heatmap(combinedata):
         index += 1
 
 # overlap two images together
-def overlay():
+def overlay(outputpath, per1, per2):
     for root, folders, files in os.walk(imagespath):
         # loop the images
         for file in files:
@@ -120,8 +121,15 @@ def overlay():
             imagenames = file.split(".")
             imagename = imagenames[0]
             map = cv.imread(outputpath + imagename + "_heat.png")
-            imagemap = cv.addWeighted(map,0.5,image,0.5,0)
-            cv.imwrite(overlaypath + imagename + ".jpg",imagemap)
+
+            height, width, depth = image.shape
+            print(height, width, depth)
+
+            height, width, depth = map.shape
+            print(height, width, depth)
+
+            imagemap = cv.addWeighted(map,per1,image,per2,0)
+            cv.imwrite(overlaypath + imagename + "_complex.jpg", imagemap)
 
 # this function is used to combine some data file together.
 def combine():
@@ -171,88 +179,95 @@ def H(data):
 
 # image complexity heat-map
 def calculateComplexity(method, window_length, window_wide):
-    if method == "Entropy": # Entropy
-        image = cv.imread(".\\images\\30.jpg")
-        # get the images row and column numbers
-        row_num = len(image)
-        column_num = len(image[0])
-        # y (wide)
-        print(row_num)
-        # x (length)
-        print(column_num)
+    # loop the target folder to get the original images' information
+    for root, folders, files in os.walk(imagespath):
+        # loop the images
+        for file in files:
+            print(file)
+            if method == "Entropy":  # Entropy
+                image = cv.imread(root+"\\"+file)
+                # get the images row and column numbers
+                row_num = len(image)
+                column_num = len(image[0])
+                # y (wide)
+                print(row_num)
+                # x (length)
+                print(column_num)
 
-        # list to store the data used to calculate the entropy value
-        s = (row_num,column_num)
-        final_matrix = np.zeros(s)
-        counter_matrix = np.zeros(s, dtype=int)
+                # list to store the data used to calculate the entropy value
+                s = (row_num, column_num)
+                final_matrix = np.zeros(s)
+                counter_matrix = np.zeros(s, dtype=int)
 
-        #print(final_matrix)
-        #print (counter_matrix)
+                # print(final_matrix)
+                # print (counter_matrix)
 
-        pixel_counter = 0
-        for row in range(row_num):
-            for column in range(column_num):
-                color = image[row][column][0]
-                data = [color]
-                for window_column in range(window_length):
-                    length = column + window_column
-                    #print('x: '+ str(length))
-                    if length > column_num - 1:
-                        break
-                    for window_row in range(window_wide):
-                        wide =  row + window_row
-                        #print('y: '+ str(wide))
-                        if wide > row_num - 1:
-                            break
-                        # grep data except the top left corner one
-                        if window_column != 0 or (window_column == 0 and window_row != 0):
-                            color = image[wide][length][0]
-                            data.append(color)
-                Hlist = H(data)
-                Hindex = 0
-                final_matrix[row][column] += Hlist[Hindex]
-                counter_matrix[row][column] += 1
-                Hindex += 1
-                # here get the entropy values in the window
-                for window_column in range(window_length):
-                   length = column + window_column
-                   if length > column_num - 1:
-                       break
-                   for window_row in range(window_wide):
-                       wide = row + window_row
-                       if wide > row_num - 1:
-                           break
-                       if window_column != 0 or (window_column == 0 and window_row != 0):
-                           final_matrix[wide][length] += Hlist[Hindex]
-                           counter_matrix[wide][length] += 1
-                           Hindex += 1
-                pixel_counter += 1
-                print(pixel_counter)
+                pixel_counter = 0
+                for row in range(row_num):
+                    for column in range(column_num):
+                        color = image[row][column][0]
+                        data = [color]
+                        for window_column in range(window_length):
+                            length = column + window_column
+                            # print('x: '+ str(length))
+                            if length > column_num - 1:
+                                break
+                            for window_row in range(window_wide):
+                                wide = row + window_row
+                                # print('y: '+ str(wide))
+                                if wide > row_num - 1:
+                                    break
+                                # grep data except the top left corner one
+                                if window_column != 0 or (window_column == 0 and window_row != 0):
+                                    color = image[wide][length][0]
+                                    data.append(color)
+                        Hlist = H(data)
+                        Hindex = 0
+                        final_matrix[row][column] += Hlist[Hindex]
+                        counter_matrix[row][column] += 1
+                        Hindex += 1
+                        # here get the entropy values in the window
+                        for window_column in range(window_length):
+                            length = column + window_column
+                            if length > column_num - 1:
+                                break
+                            for window_row in range(window_wide):
+                                wide = row + window_row
+                                if wide > row_num - 1:
+                                    break
+                                if window_column != 0 or (window_column == 0 and window_row != 0):
+                                    final_matrix[wide][length] += Hlist[Hindex]
+                                    counter_matrix[wide][length] += 1
+                                    Hindex += 1
+                        pixel_counter += 1
+                        print(pixel_counter)
 
-        for row in range(row_num):
-            for column in range(column_num):
-                final_matrix[row][column] = (final_matrix[row][column]/counter_matrix[row][column])*255
-                if final_matrix[row][column] != 0:
-                    print(final_matrix[row][column])
-        print(final_matrix)
-        print(counter_matrix)
+                for row in range(row_num):
+                    for column in range(column_num):
+                        final_matrix[row][column] = (final_matrix[row][column] / counter_matrix[row][column]) * 255
+                        #if final_matrix[row][column] != 0:
+                        #    print(final_matrix[row][column])
+                print(final_matrix)
+                print(counter_matrix)
 
-        # output the grayscale image first
-        cv.imwrite(outputpath + "test.png", final_matrix)
-        out_image = cv.imread(outputpath+"test.png")
+                file_names = file.split(".")
+                filename = file_names[0]
+                # output the grayscale image first
+                cv.imwrite(complexitypath + filename + "_heat.png", final_matrix)
+                out_image = cv.imread(complexitypath + filename + "_heat.png")
 
-        # read the grayscale image and make it to be color map
-        color_final = cv.applyColorMap(out_image,cv.COLORMAP_JET)
-        cv.imwrite(outputpath + "test.png", color_final)
+                # read the grayscale image and make it to be color map
+                color_final_matrix = cv.applyColorMap(out_image, cv.COLORMAP_JET)
+                cv.imwrite(complexitypath + filename + "_heat.png", color_final_matrix)
 
 
 def main():
     #combinedata = combine()
-    # generate heat maps
+    # generate heat maps of fixation map
     #heatmap(combinedata)
-    # overlay heat maps with original images
-    #overlay()
     calculateComplexity("Entropy",10,10)
+    # overlay heat maps with original images
+    overlay(complexitypath, 0.3, 0.7)
 
 if __name__ == "__main__":
     main()

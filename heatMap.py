@@ -1,168 +1,176 @@
 from pyheatmap.heatmap import HeatMap
 import numpy as np
 import cv2 as cv
-import math, string, os, xlrd
+import math
+import os
+import xlrd
 
 # This is for generating the heat-map of salience map and complexity map
 
-complexitypath = ".\\imageComp\\"
-outputpath = ".\\heatmaps\\"
+complexity_path = ".\\imageComp\\"
+output_path = ".\\heatmaps\\"
 file = ".\\Data\\NewData.xls"
-imagespath = ".\\images\\"
-overlaypath = ".\\overlay\\"
-combinedpath = ".\\combine"
+images_path = ".\\inputImages\\"
+overlay_path = ".\\overlay\\"
+combined_path = ".\\combine"
 
-def open_excel(file):
+
+def open_excel(access_file):
     try:
-        data = xlrd.open_workbook(file)
+        data = xlrd.open_workbook(access_file)
         return data
     except Exception as e:
         print(str(e))
 
-def excel_table_index(file):
-    data = open_excel(file)
+
+def excel_table_index(access_file):
+    data = open_excel(access_file)
     table = data.sheet_by_name("NewData")
-    nrows = table.nrows
-    Resolutions = []
-    Resolution = []
+    n_rows = table.nrows
+    resolutions = []
+    resolution = []
 
-    MapData = []
-    MediaNames = []
-    GazeEventDuration = []
-    GazePointsX = []
-    GazePointsY = []
-    for row in range(1, nrows-1):
+    map_data = []
+    media_names = []
+    gaze_event_duration = []
+    gaze_points_x = []
+    gaze_points_y = []
+    for row in range(1, n_rows-1):
         gpx = table.cell(row, 7).value
-        eventType = table.cell(row, 4).value
-        if gpx and eventType == 'Fixation':
-            Resolution.append(int(table.cell(row,1).value))
-            Resolution.append(int(table.cell(row,2).value))
-            Resolutions.append(Resolution)
-            Resolution = []
-            GazePointsX.append(int(gpx))
-            GazePointsY.append(int(table.cell(row, 8).value))
-            MediaNames.append(table.cell(row, 0).value)
-            GazeEventDuration.append(int(table.cell(row,5).value))
+        event_type = table.cell(row, 4).value
+        if gpx and event_type == 'Fixation':
+            resolution.append(int(table.cell(row, 1).value))
+            resolution.append(int(table.cell(row, 2).value))
+            resolutions.append(resolution)
+            resolution = []
+            gaze_points_x.append(int(gpx))
+            gaze_points_y.append(int(table.cell(row, 8).value))
+            media_names.append(table.cell(row, 0).value)
+            gaze_event_duration.append(int(table.cell(row, 5).value))
 
-    MapData.append(MediaNames)
-    MapData.append(Resolutions)
-    MapData.append(GazePointsX)
-    MapData.append(GazePointsY)
-    MapData.append(GazeEventDuration)
+    map_data.append(media_names)
+    map_data.append(resolutions)
+    map_data.append(gaze_points_x)
+    map_data.append(gaze_points_y)
+    map_data.append(gaze_event_duration)
 
-    return MapData
+    return map_data
 
-def heatmap(combinedata):
-    MapData = excel_table_index(file)
-    MediaNames = MapData[0]
-    Resolution = MapData[1]
-    GazePointsX = MapData[2]
-    GazePointsY = MapData[3]
-    GazeEventDuration = MapData[4]
 
-    checkName = MediaNames[0]
+def heat_map(combine_data):
+    map_data = excel_table_index(file)
+    media_names = map_data[0]
+    resolution = map_data[1]
+    gaze_points_x = map_data[2]
+    gaze_points_y = map_data[3]
+    # GazeEventDuration = map_data[4]
 
-    imagesize = [[0, 0], [Resolution[0][0], Resolution[0][1]]]
+    check_name = media_names[0]
+
+    image_size = [[0, 0], [resolution[0][0], resolution[0][1]]]
 
     index = 0
     point = []
     pointslist = []
-    for name in MediaNames:
-        if checkName is not name:
-            print(checkName)
-            pointslist.extend(imagesize)
-            imagesize.remove(imagesize[1])
-            imagesize.append([Resolution[index][0], Resolution[index][1]])
+    for name in media_names:
+        if check_name is not name:
+            print(check_name)
+            pointslist.extend(image_size)
+            image_size.remove(image_size[1])
+            image_size.append([resolution[index][0], resolution[index][1]])
 
-            if combinedata:
-                for cindex in range(len(combinedata[0])):
-                    if combinedata[0][cindex] == checkName:
-                        pointslist.append([int(combinedata[1][cindex]),int(combinedata[2][cindex])])
+            if combine_data:
+                for cindex in range(len(combine_data[0])):
+                    if combine_data[0][cindex] == check_name:
+                        pointslist.append([int(combine_data[1][cindex]), int(combine_data[2][cindex])])
 
             hm = HeatMap(pointslist)
-            hmnames = checkName.split(".")
-            hmname = hmnames[0]
-            #hm.clickmap(save_as=outputpath + hmname + "_hit.png")
-            hm.heatmap(save_as=outputpath + hmname + "_heat.png")
+            hm_names = check_name.split(".")
+            hm_name = hm_names[0]
+            # hm.clickmap(save_as=outputpath + hm_name + "_hit.png")
+            hm.heatmap(save_as=output_path + hm_name + "_heat.png")
             pointslist = []
-            checkName = name
+            check_name = name
 
-        point.append(GazePointsX[index])
-        point.append(GazePointsY[index])
+        point.append(gaze_points_x[index])
+        point.append(gaze_points_y[index])
         pointslist.append(point)
         point = []
 
-        if index == len(MediaNames) - 1:
-            print(checkName)
-            pointslist.extend(imagesize)
+        if index == len(media_names) - 1:
+            print(check_name)
+            pointslist.extend(image_size)
 
-            if combinedata:
-                for cindex in range(len(combinedata[0])):
-                    if combinedata[0][cindex] == checkName:
-                        pointslist.append([int(combinedata[1][cindex]),int(combinedata[2][cindex])])
+            if combine_data:
+                for cindex in range(len(combine_data[0])):
+                    if combine_data[0][cindex] == check_name:
+                        pointslist.append([int(combine_data[1][cindex]), int(combine_data[2][cindex])])
 
             hm = HeatMap(pointslist)
-            hmnames = name.split(".")
-            hmname = hmnames[0]
-            #hm.clickmap(save_as=outputpath + hmname + "_hit.png")
-            hm.heatmap(save_as=outputpath + hmname + "_heat.png")
+            hm_names = name.split(".")
+            hm_name = hm_names[0]
+            # hm.clickmap(save_as=outputpath + hm_name + "_hit.png")
+            hm.heatmap(save_as=output_path + hm_name + "_heat.png")
             break
 
         index += 1
 
+
 # overlap two images together
-def overlay(outputpath, persentage1, persentage2):
-    for root, folders, files in os.walk(imagespath):
+def overlay(output_image_path, ratio_1, ratio_2):
+    for root, folders, files in os.walk(images_path):
         # loop the images
-        for file in files:
-            image = cv.imread(root + "\\" + file)
-            imagenames = file.split(".")
-            imagename = imagenames[0]
-            map = cv.imread(outputpath + imagename + "_heat.png")
+        for each_file in files:
+            image = cv.imread(root + "\\" + each_file)
+            image_names = each_file.split(".")
+            image_name = image_names[0]
+            h_map = cv.imread(output_image_path + image_name + "_heat.png")
 
             height, width, depth = image.shape
             print(height, width, depth)
 
-            height, width, depth = map.shape
+            height, width, depth = h_map.shape
             print(height, width, depth)
 
-            imagemap = cv.addWeighted(map,persentage1,image,persentage2,0)
-            cv.imwrite(overlaypath + imagename + "_complex.jpg", imagemap)
+            image_map = cv.addWeighted(h_map, ratio_1, image, ratio_2, 0)
+            cv.imwrite(overlay_path + image_name + "_complex.jpg", image_map)
+
 
 # this function is used to combine some data file together.
 def combine():
-    combineddata = []
+    combined_data = []
     name = []
-    gazeX = []
-    gazeY = []
-    for root, folders, files in os.walk(combinedpath):
+    gaze_x = []
+    gaze_y = []
+    for root, folders, files in os.walk(combined_path):
         if files:
-            for file in files:
-                print(file)
-                data = open_excel(root + "\\" + file)
+            for each_file in files:
+                print(each_file)
+                data = open_excel(root + "\\" + each_file)
                 table = data.sheet_by_name("Data")
-                nrows = table.nrows
-                for row in range(1, nrows - 1):
-                    if table.cell(row,10).value:
+                n_rows = table.nrows
+                for row in range(1, n_rows - 1):
+                    if table.cell(row, 10).value:
                         if table.cell(row, 43).value == 'Fixation':
-                            if table.cell(row,54).value and table.cell(row,55).value:
-                                gazeX.append(table.cell(row,54).value)
-                                gazeY.append(table.cell(row,55).value)
+                            if table.cell(row, 54).value and table.cell(row, 55).value:
+                                gaze_x.append(table.cell(row, 54).value)
+                                gaze_y.append(table.cell(row, 55).value)
                                 name.append(table.cell(row, 10).value)
-    combineddata.append(name)
-    combineddata.append(gazeX)
-    combineddata.append(gazeY)
-    return combineddata
+    combined_data.append(name)
+    combined_data.append(gaze_x)
+    combined_data.append(gaze_y)
+    return combined_data
 
 
 # calculate the range to data, if the image is grayscale, the range is 0 -> 255
 # def range_bytes():
 #   return range(256)
 
+
 # Entropy calculation function, based on Shannon Information Theory
-def EntropyCalculation(data):
+def entropy_calculation(data):
     if not data:
-        return 0
+        raise ValueError('The data set cannot be empty.')
     entropy = 0
     color_list = set(data)
     for element in color_list:
@@ -174,15 +182,17 @@ def EntropyCalculation(data):
             # print(entropy)
     return entropy
 
+
 # image complexity heat-map base on Entropy
-def calculateComplexity(method, window_length, window_wide, window_move_step = 1):
+def calculate_complexity(method, window_length, window_wide, window_move_step=1):
     # loop the target folder to get the original images' information
-    for root, folders, files in os.walk(imagespath):
+    for root, folders, files in os.walk(images_path):
         # loop the images
-        for file in files:
-            print(file)
+        for each_file in files:
+            print(each_file)
             if method == "Entropy":  # Entropy
-                image = cv.imread(root+"\\"+file)
+                image = cv.imread(root+"\\"+each_file)
+                # print(image)
                 # get the images row and column numbers
                 row_num = len(image)
                 column_num = len(image[0])
@@ -217,7 +227,7 @@ def calculateComplexity(method, window_length, window_wide, window_move_step = 1
                                 # the data represents the pixels in the window
                                 data = [color]
 
-                                # loop each pixel in the window
+                                # loop each pixel in the window, color collection
                                 for window_column in range(window_length):
 
                                     # here calculate the window pixel's actual location in the final matrix
@@ -235,17 +245,21 @@ def calculateComplexity(method, window_length, window_wide, window_move_step = 1
                                             # add pixels in the window to the data list
                                             color = image[current_row][current_column][0]
                                             data.append(color)
-
+                                # print(data)
                                 # calculate the entropy value for current window
-                                entropy = EntropyCalculation(data)
+                                try:
+                                    entropy = entropy_calculation(data)
+                                except ValueError as error:
+                                    print(repr(error))
+                                # print(entropy)
 
                                 # assign this entropy value to current pixel (top left corner of window)
                                 final_matrix[row][column] += entropy
-                                # current pixel calculation time add 1
+                                # current pixel calculation time add 1 (frequency)
                                 counter_matrix[row][column] += 1
 
                                 # here get the rest entropy values in the window
-                                # traverse whole window
+                                # traverse whole window, the process is the same with color collection
                                 for window_column in range(window_length):
                                     current_column = column + window_column
                                     for window_row in range(window_wide):
@@ -255,34 +269,38 @@ def calculateComplexity(method, window_length, window_wide, window_move_step = 1
                                             counter_matrix[current_row][current_column] += 1
                                 pixel_counter += 1
 
+                print(final_matrix)
+
+                # traverse final matrix assign the each element final value which equals to
+                # sum entropy divide the frequency of calculation for each pixel
                 for row in range(row_num):
                     for column in range(column_num):
-                        final_matrix[row][column] = 255 - ((final_matrix[row][column] / counter_matrix[row][column]) * 255)
-                        if final_matrix[row][column] < 240:
-                            final_matrix[row][column] = 0
+                        final_matrix[row][column] = (final_matrix[row][column] / counter_matrix[row][column]) * 35
+                        # if final_matrix[row][column] < 240:
+                        #    final_matrix[row][column] = 0
                         #    print(final_matrix[row][column])
                 print(final_matrix)
                 print(counter_matrix)
 
-                file_names = file.split(".")
+                file_names = each_file.split(".")
                 filename = file_names[0]
                 # output the grayscale image first
-                cv.imwrite(complexitypath + filename + "_heat.png", final_matrix)
-                out_image = cv.imread(complexitypath + filename + "_heat.png")
+                cv.imwrite(complexity_path + filename + "_heat_gray.png", final_matrix)
+                out_image = cv.imread(complexity_path + filename + "_heat_gray.png")
 
                 # read the grayscale image and make it to be color map
-                # color_final_matrix = cv.applyColorMap(out_image, cv.COLORMAP_JET)
-                # cv.imwrite(complexitypath + filename + "_heat.png", color_final_matrix)
+                color_final_matrix = cv.applyColorMap(out_image, cv.COLORMAP_JET)
+                cv.imwrite(complexity_path + filename + "_heat_color.png", color_final_matrix)
 
 
 def main():
-    # combinedata = combine()
+    # combine_data = combine()
     # generate heat maps of fixation map
-    # heatmap(combinedata)
-    calculateComplexity("Entropy",9,9)
+    # heat_map(combine_data)
+    calculate_complexity("Entropy", 9, 9)
     # overlay heat maps with original images
-    # overlay(complexitypath, 0.3, 0.7)
+    # overlay(complexity_path, 0.3, 0.7)
+
 
 if __name__ == "__main__":
     main()
-

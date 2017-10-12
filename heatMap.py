@@ -5,6 +5,7 @@ import math
 import os
 import xlrd
 
+
 # This is for generating the heat-map of salience map and complexity map
 
 complexity_path = ".\\imageComp\\"
@@ -168,20 +169,30 @@ def combine():
 
 
 # Entropy calculation function, based on Shannon Information Theory
-def entropy_calculation(data):
-    if not data:
+def entropy_calculation(cutout_image):
+    if not cutout_image:
         raise ValueError('The data set cannot be empty.')
     entropy = 0
-    color_list = set(data)
+    # for testing all entropy function
+    # cutout_image = [0, 0, 1, 1, 2, 2, 3, 3]
+    color_list = set(cutout_image)
+    print(len(color_list))
+
     for element in color_list:
-        p_x = float(data.count(element))/len(data)
+
+        p_x = float(cutout_image.count(element)) / len(cutout_image)
+
         if p_x > 0:
-            current = - p_x*math.log(p_x, 2)
+            current = - p_x * math.log(p_x, 2)
+
+            # normalised version
+            # current = - p_x*math.log(p_x, 2) /math.log(len(color_list),2)
+
             # this variable entropy represents whole block's entropy value
             entropy += current
             # print(entropy)
-    return entropy
 
+    return entropy
 
 # image complexity heat-map base on Entropy
 def calculate_complexity(method, window_length, window_wide, window_move_step=1):
@@ -201,7 +212,7 @@ def calculate_complexity(method, window_length, window_wide, window_move_step=1)
                 # x (length)
                 print(column_num)
 
-                # list to store the data used to calculate the entropy value
+                # list to store the data used to calculate the complexity_value value
                 s = (row_num, column_num)
                 final_matrix = np.zeros(s)
                 counter_matrix = np.zeros(s, dtype=int)
@@ -246,38 +257,39 @@ def calculate_complexity(method, window_length, window_wide, window_move_step=1)
                                             color = image[current_row][current_column][0]
                                             data.append(color)
                                 # print(data)
-                                # calculate the entropy value for current window
+                                # calculate the complexity_value value for current window
                                 try:
-                                    entropy = entropy_calculation(data)
+                                    complexity_value = entropy_calculation(data)
+                                    print(complexity_value)
                                 except ValueError as error:
                                     print(repr(error))
-                                # print(entropy)
+                                # print(complexity_value)
 
-                                # assign this entropy value to current pixel (top left corner of window)
-                                final_matrix[row][column] += entropy
+                                # assign this complexity_value value to current pixel (top left corner of window)
+                                final_matrix[row][column] += complexity_value
                                 # current pixel calculation time add 1 (frequency)
                                 counter_matrix[row][column] += 1
 
-                                # here get the rest entropy values in the window
+                                # here get the rest complexity_value values in the window
                                 # traverse whole window, the process is the same with color collection
                                 for window_column in range(window_length):
                                     current_column = column + window_column
                                     for window_row in range(window_wide):
                                         current_row = row + window_row
                                         if window_column != 0 or (window_column == 0 and window_row != 0):
-                                            final_matrix[current_row][current_column] += entropy
+                                            final_matrix[current_row][current_column] += complexity_value
                                             counter_matrix[current_row][current_column] += 1
                                 pixel_counter += 1
 
                 print(final_matrix)
 
                 # traverse final matrix assign the each element final value which equals to
-                # sum entropy divide the frequency of calculation for each pixel
+                # sum complexity_value divide the frequency of calculation for each pixel
                 for row in range(row_num):
                     for column in range(column_num):
-                        final_matrix[row][column] = (final_matrix[row][column] / counter_matrix[row][column]) * 35
-                        # if final_matrix[row][column] < 240:
-                        #    final_matrix[row][column] = 0
+                        final_matrix[row][column] = (final_matrix[row][column] / counter_matrix[row][column])
+                        # if final_matrix[row][column] < 220:
+                        #  final_matrix[row][column] = 0
                         #    print(final_matrix[row][column])
                 print(final_matrix)
                 print(counter_matrix)
@@ -297,7 +309,7 @@ def main():
     # combine_data = combine()
     # generate heat maps of fixation map
     # heat_map(combine_data)
-    calculate_complexity("Entropy", 9, 9)
+    calculate_complexity("Entropy", 3, 3)
     # overlay heat maps with original images
     # overlay(complexity_path, 0.3, 0.7)
 

@@ -170,19 +170,21 @@ def combine():
 
 # Entropy calculation function, based on Shannon Information Theory
 def entropy_calculation(cutout_image):
+
     if not cutout_image:
         raise ValueError('The data set cannot be empty.')
     entropy = 0
     # for testing all entropy function
     # cutout_image = [0, 0, 1, 1, 2, 2, 3, 3]
     color_list = set(cutout_image)
-    print(len(color_list))
+    # print(len(color_list))
 
     for element in color_list:
 
         p_x = float(cutout_image.count(element)) / len(cutout_image)
 
         if p_x > 0:
+
             current = - p_x * math.log(p_x, 2)
 
             # normalised version
@@ -194,122 +196,203 @@ def entropy_calculation(cutout_image):
 
     return entropy
 
+
+# function to do the edge detection by Sobel x
+def sobel_edge_detection_x(cutout_image, window_length, window_wide):
+
+    if not cutout_image:
+        raise ValueError('The data set cannot be empty.')
+
+    image = np.array(cutout_image).reshape(window_wide, window_length)
+
+    sobel_x = cv.Sobel(image, cv.CV_64F, 1, 0, ksize=5)
+
+    return entropy_edge_detection(sobel_x)
+
+
+# function to do the edge detection by Sobel y
+def sobel_edge_detection_y(cutout_image, window_length, window_wide):
+
+    if not cutout_image:
+        raise ValueError('The data set cannot be empty.')
+
+    image = np.array(cutout_image).reshape(window_wide, window_length)
+
+    sobel_y = cv.Sobel(image, cv.CV_64F, 0, 1, ksize=5)
+
+    return entropy_edge_detection(sobel_y)
+
+
+# function to do the edge detection by Laplacian
+def laplacian_edge_detection(cutout_image, window_length, window_wide):
+
+    if not cutout_image:
+        raise ValueError('The data set cannot be empty.')
+
+    image = np.array(cutout_image).reshape(window_wide, window_length)
+
+    laplacian = cv.Laplacian(image, cv.CV_64F)
+
+    return entropy_edge_detection(laplacian)
+
+
+def entropy_edge_detection(edge_detection_map):
+
+    pixel_list = edge_detection_map.tolist()
+
+    new_list = generate_new_list(pixel_list)
+
+    entropy = entropy_calculation(new_list)
+
+    return entropy
+
+
+def generate_new_list(pixel_list):
+
+    new_list = []
+
+    for row in range(len(pixel_list)):
+
+        for column in range(len(pixel_list[row])):
+
+            new_list.append(pixel_list[row][column])
+
+    return new_list
+
+
 # image complexity heat-map base on Entropy
-def calculate_complexity(method, window_length, window_wide, window_move_step=1):
+def calculate_complexity(method="Entropy", window_length=9, window_wide=9, window_move_step=1):
     # loop the target folder to get the original images' information
     for root, folders, files in os.walk(images_path):
         # loop the images
         for each_file in files:
             print(each_file)
-            if method == "Entropy":  # Entropy
-                image = cv.imread(root+"\\"+each_file)
-                # print(image)
-                # get the images row and column numbers
-                row_num = len(image)
-                column_num = len(image[0])
-                # y (wide)
-                print(row_num)
-                # x (length)
-                print(column_num)
 
-                # list to store the data used to calculate the complexity_value value
-                s = (row_num, column_num)
-                final_matrix = np.zeros(s)
-                counter_matrix = np.zeros(s, dtype=int)
+            image = cv.imread(root + "\\" + each_file)
+            # print(image)
+            # get the images row and column numbers
+            row_num = len(image)
+            column_num = len(image[0])
 
-                # print(final_matrix)
-                # print (counter_matrix)
+            # y (wide)
+            print(row_num)
 
-                pixel_counter = 0
+            # x (length)
+            print(column_num)
 
-                # traverse the matrix
-                for row in range(row_num):
-                    # window moves following y direction
-                    if row % window_move_step == 0 and (row + window_wide) <= row_num:
+            # list to store the cutout_image used to calculate the complexity_value value
+            size = (row_num, column_num)
+            final_complexity_map = np.zeros(size)
+            counter_map = np.zeros(size, dtype=int)
 
-                        for column in range(column_num):
+            # print(final_complexity_map)
+            # print (counter_map)
 
-                            # window moves following x direction
-                            if column % window_move_step == 0 and (column + window_length) <= column_num:
+            # traverse the matrix
+            for row in range(row_num):
+                # window moves following y direction
+                if row % window_move_step == 0 and (row + window_wide) <= row_num:
 
-                                # this represents the pixel in the top left corner of window
-                                color = image[row][column][0]
+                    for column in range(column_num):
 
-                                # the data represents the pixels in the window
-                                data = [color]
+                        # window moves following x direction
+                        if column % window_move_step == 0 and (column + window_length) <= column_num:
 
-                                # loop each pixel in the window, color collection
-                                for window_column in range(window_length):
+                            # the cutout_image represents the pixels in the window
+                            cutout_image = []
+
+                            # loop each pixel in the window, color collection
+                            for window_column in range(window_length):
+
+                                # here calculate the window pixel's actual location in the final matrix
+                                current_column = column + window_column
+
+                                # print('x: '+ str(length))
+                                for window_row in range(window_wide):
 
                                     # here calculate the window pixel's actual location in the final matrix
-                                    current_column = column + window_column
+                                    current_row = row + window_row
+                                    # print('y: '+ str(wide))
+                                    color = image[current_row][current_column][0]
+                                    cutout_image.append(color)
+                            # print(cutout_image)
+                            # calculate the complexity_value value for current window
+                            try:
+                                if method == "Laplacian":
+                                    complexity_value = laplacian_edge_detection(cutout_image,
+                                                                                window_wide,
+                                                                                window_length)
 
-                                    # print('x: '+ str(length))
-                                    for window_row in range(window_wide):
+                                elif method == "Sobel_x":
+                                    complexity_value = sobel_edge_detection_x(cutout_image,
+                                                                              window_wide,
+                                                                              window_length)
 
-                                        # here calculate the window pixel's actual location in the final matrix
-                                        current_row = row + window_row
-                                        # print('y: '+ str(wide))
-                                        # grep data except the top left corner one
-                                        if window_column != 0 or (window_column == 0 and window_row != 0):
+                                elif method == "Sobel_y":
+                                    complexity_value = sobel_edge_detection_y(cutout_image,
+                                                                              window_wide,
+                                                                              window_length)
+                                else:
+                                    complexity_value = entropy_calculation(cutout_image)
 
-                                            # add pixels in the window to the data list
-                                            color = image[current_row][current_column][0]
-                                            data.append(color)
-                                # print(data)
-                                # calculate the complexity_value value for current window
-                                try:
-                                    complexity_value = entropy_calculation(data)
-                                    print(complexity_value)
-                                except ValueError as error:
-                                    print(repr(error))
-                                # print(complexity_value)
-
-                                # assign this complexity_value value to current pixel (top left corner of window)
-                                final_matrix[row][column] += complexity_value
-                                # current pixel calculation time add 1 (frequency)
-                                counter_matrix[row][column] += 1
-
-                                # here get the rest complexity_value values in the window
+                                # here assign complexity_value to each pixel in the window
                                 # traverse whole window, the process is the same with color collection
                                 for window_column in range(window_length):
+
                                     current_column = column + window_column
+
                                     for window_row in range(window_wide):
+
                                         current_row = row + window_row
-                                        if window_column != 0 or (window_column == 0 and window_row != 0):
-                                            final_matrix[current_row][current_column] += complexity_value
-                                            counter_matrix[current_row][current_column] += 1
-                                pixel_counter += 1
 
-                print(final_matrix)
+                                        final_complexity_map[current_row][current_column] += complexity_value
+                                        counter_map[current_row][current_column] += 1
 
-                # traverse final matrix assign the each element final value which equals to
-                # sum complexity_value divide the frequency of calculation for each pixel
-                for row in range(row_num):
-                    for column in range(column_num):
-                        final_matrix[row][column] = (final_matrix[row][column] / counter_matrix[row][column])
-                        # if final_matrix[row][column] < 220:
-                        #  final_matrix[row][column] = 0
-                        #    print(final_matrix[row][column])
-                print(final_matrix)
-                print(counter_matrix)
+                            except ValueError as error:
 
-                file_names = each_file.split(".")
-                filename = file_names[0]
-                # output the grayscale image first
-                cv.imwrite(complexity_path + filename + "_heat_gray.png", final_matrix)
-                out_image = cv.imread(complexity_path + filename + "_heat_gray.png")
+                                print(repr(error))
+                                # print(complexity_value)
 
-                # read the grayscale image and make it to be color map
-                color_final_matrix = cv.applyColorMap(out_image, cv.COLORMAP_JET)
-                cv.imwrite(complexity_path + filename + "_heat_color.png", color_final_matrix)
+            final_complexity_map = final_map_generation(row_num, column_num, final_complexity_map, counter_map)
+
+            print(final_complexity_map)
+            print(counter_map)
+
+            file_names = each_file.split(".")
+
+            filename = file_names[0]
+
+            # output the grayscale image first
+            cv.imwrite(complexity_path + filename + "_heat_gray.png", final_complexity_map)
+            out_image = cv.imread(complexity_path + filename + "_heat_gray.png")
+
+            # read the grayscale image and make it to be color map
+            color_final_matrix = cv.applyColorMap(out_image, cv.COLORMAP_JET)
+            cv.imwrite(complexity_path + filename + "_heat_color.png", color_final_matrix)
+
+
+
+# traverse final com assign the each element final value which equals to
+# sum complexity_value divide the frequency of calculation for each pixel
+def final_map_generation(rows, columns, final_map, counter_map):
+
+    for row in range(rows):
+
+        for column in range(columns):
+
+            final_map[row][column] = (final_map[row][column] / counter_map[row][column]) * 25
+            # if final_map[row][column] < 220:
+            #  final_map[row][column] = 0
+            # print(final_map[row][column])
+
+    return final_map
 
 
 def main():
     # combine_data = combine()
     # generate heat maps of fixation map
     # heat_map(combine_data)
-    calculate_complexity("Entropy", 3, 3)
+    calculate_complexity("Entropy", 9, 9)
     # overlay heat maps with original images
     # overlay(complexity_path, 0.3, 0.7)
 

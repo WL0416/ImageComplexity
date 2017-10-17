@@ -197,6 +197,19 @@ def entropy_calculation(cutout_image):
     return entropy
 
 
+# function to do the edge detection by Canny
+def canny_edge_detection(cutout_image, window_length, window_wide):
+
+    if not cutout_image:
+        raise ValueError('The data set cannot be empty.')
+
+    image = np.array(cutout_image).reshape(window_wide, window_length)
+
+    canny_image = cv.Canny(image, 100, 200)
+
+    return entropy_edge_detection(canny_image)
+
+
 # function to do the edge detection by Sobel x
 def sobel_edge_detection_x(cutout_image, window_length, window_wide):
 
@@ -205,9 +218,9 @@ def sobel_edge_detection_x(cutout_image, window_length, window_wide):
 
     image = np.array(cutout_image).reshape(window_wide, window_length)
 
-    sobel_x = cv.Sobel(image, cv.CV_64F, 1, 0, ksize=5)
+    sobel_x_image = cv.Sobel(image, cv.CV_64F, 1, 0, ksize=5)
 
-    return entropy_edge_detection(sobel_x)
+    return entropy_edge_detection(sobel_x_image)
 
 
 # function to do the edge detection by Sobel y
@@ -218,9 +231,9 @@ def sobel_edge_detection_y(cutout_image, window_length, window_wide):
 
     image = np.array(cutout_image).reshape(window_wide, window_length)
 
-    sobel_y = cv.Sobel(image, cv.CV_64F, 0, 1, ksize=5)
+    sobel_y_image = cv.Sobel(image, cv.CV_64F, 0, 1, ksize=5)
 
-    return entropy_edge_detection(sobel_y)
+    return entropy_edge_detection(sobel_y_image)
 
 
 # function to do the edge detection by Laplacian
@@ -231,9 +244,9 @@ def laplacian_edge_detection(cutout_image, window_length, window_wide):
 
     image = np.array(cutout_image).reshape(window_wide, window_length)
 
-    laplacian = cv.Laplacian(image, cv.CV_64F)
+    laplacian_image = cv.Laplacian(image, cv.CV_64F)
 
-    return entropy_edge_detection(laplacian)
+    return entropy_edge_detection(laplacian_image)
 
 
 def entropy_edge_detection(edge_detection_map):
@@ -332,6 +345,11 @@ def calculate_complexity(method="Entropy", window_length=9, window_wide=9, windo
                                     complexity_value = sobel_edge_detection_y(cutout_image,
                                                                               window_wide,
                                                                               window_length)
+
+                                elif method == "Canny":
+                                    complexity_value = canny_edge_detection(cutout_image,
+                                                                            window_wide,
+                                                                            window_length)
                                 else:
                                     complexity_value = entropy_calculation(cutout_image)
 
@@ -371,7 +389,6 @@ def calculate_complexity(method="Entropy", window_length=9, window_wide=9, windo
             cv.imwrite(complexity_path + filename + "_heat_color.png", color_final_matrix)
 
 
-
 # traverse final com assign the each element final value which equals to
 # sum complexity_value divide the frequency of calculation for each pixel
 def final_map_generation(rows, columns, final_map, counter_map):
@@ -380,9 +397,9 @@ def final_map_generation(rows, columns, final_map, counter_map):
 
         for column in range(columns):
 
-            final_map[row][column] = (final_map[row][column] / counter_map[row][column]) * 25
-            # if final_map[row][column] < 220:
-            #  final_map[row][column] = 0
+            final_map[row][column] = (final_map[row][column] / counter_map[row][column]) * 175
+            if final_map[row][column] < 150:
+              final_map[row][column] = 0
             # print(final_map[row][column])
 
     return final_map
@@ -392,7 +409,7 @@ def main():
     # combine_data = combine()
     # generate heat maps of fixation map
     # heat_map(combine_data)
-    calculate_complexity("Entropy", 9, 9)
+    calculate_complexity("Canny")
     # overlay heat maps with original images
     # overlay(complexity_path, 0.3, 0.7)
 

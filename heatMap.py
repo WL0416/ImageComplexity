@@ -4,7 +4,7 @@ import cv2 as cv
 import math
 import os
 import xlrd
-
+from scipy.io import savemat
 
 # This is for generating the heat-map of salience map and complexity map
 
@@ -125,7 +125,7 @@ def overlay(output_image_path, ratio_1, ratio_2):
             image = cv.imread(root + "\\" + each_file)
             image_names = each_file.split(".")
             image_name = image_names[0]
-            h_map = cv.imread(output_image_path + image_name + "_heat.png")
+            h_map = cv.imread(output_image_path + image_name + "_heat_color.png")
 
             height, width, depth = image.shape
             print(height, width, depth)
@@ -388,18 +388,23 @@ def calculate_complexity(method="Entropy", window_length=9, window_wide=9, windo
             color_final_matrix = cv.applyColorMap(out_image, cv.COLORMAP_JET)
             cv.imwrite(complexity_path + filename + "_heat_color.png", color_final_matrix)
 
+            # save the image as .mat file
+            savemat(complexity_path + filename + '.mat', {"Heat_Map": final_complexity_map})
+
 
 # traverse final com assign the each element final value which equals to
 # sum complexity_value divide the frequency of calculation for each pixel
 def final_map_generation(rows, columns, final_map, counter_map):
 
+    THRESHOLD = 150
+
     for row in range(rows):
 
         for column in range(columns):
 
-            final_map[row][column] = (final_map[row][column] / counter_map[row][column]) * 175
-            if final_map[row][column] < 150:
-              final_map[row][column] = 0
+            final_map[row][column] = (final_map[row][column] / counter_map[row][column]) * 26
+            if final_map[row][column] < THRESHOLD:
+                final_map[row][column] = 0
             # print(final_map[row][column])
 
     return final_map
@@ -409,9 +414,8 @@ def main():
     # combine_data = combine()
     # generate heat maps of fixation map
     # heat_map(combine_data)
-    calculate_complexity("Canny")
-    # overlay heat maps with original images
-    # overlay(complexity_path, 0.3, 0.7)
+    calculate_complexity()
+    # overlay(complexity_path, 0.5, 0.5)
 
 
 if __name__ == "__main__":

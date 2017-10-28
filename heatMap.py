@@ -396,13 +396,25 @@ def calculate_complexity(method="Entropy", window_length=9, window_wide=9, windo
 # sum complexity_value divide the frequency of calculation for each pixel
 def final_map_generation(rows, columns, final_map, counter_map):
 
-    THRESHOLD = 150
+    THRESHOLD = 0
 
     for row in range(rows):
 
         for column in range(columns):
 
-            final_map[row][column] = (final_map[row][column] / counter_map[row][column]) * 26
+            final_map[row][column] = final_map[row][column] / counter_map[row][column]
+
+    greatest_element = np.amax(np.array(final_map))
+
+    dividend = greatest_element / 255
+
+    print(dividend)
+
+    for row in range(rows):
+
+        for column in range(columns):
+
+            final_map[row][column] = final_map[row][column] / dividend
             if final_map[row][column] < THRESHOLD:
                 final_map[row][column] = 0
             # print(final_map[row][column])

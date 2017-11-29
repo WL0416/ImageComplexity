@@ -18,8 +18,8 @@ overlay_path = ".\\overlay\\"
 combined_path = ".\\combine"
 
 # use them in the complexity map generation
-THRESHOLD = 230
-W_SIZE = 64
+THRESHOLD = 247
+W_SIZE = 128
 W_STEP = 16
 
 
@@ -206,53 +206,61 @@ def entropy_calculation(cutout_image):
 
 
 # function to do the edge detection by Canny
-def canny_edge_detection(cutout_image, window_length, window_wide):
+def canny_edge_detection(cutout_image, window_size):
 
     if not cutout_image:
         raise ValueError('The data set cannot be empty.')
 
-    image = np.array(cutout_image).reshape(window_wide, window_length)
+    image = np.array(cutout_image).reshape(window_size, window_size)
 
     canny_image = cv.Canny(image, 100, 200)
+
+    print(canny_image)
 
     return canny_image
 
 
 # function to do the edge detection by Sobel x
-def sobel_edge_detection_x(cutout_image, window_length, window_wide):
+def sobel_edge_detection_x(cutout_image, window_size):
 
     if not cutout_image:
         raise ValueError('The data set cannot be empty.')
 
-    image = np.array(cutout_image).reshape(window_wide, window_length)
+    image = np.array(cutout_image).reshape(window_size, window_size)
 
     sobel_x_image = cv.Sobel(image, cv.CV_64F, 1, 0, ksize=5)
+
+    print(sobel_x_image)
 
     return sobel_x_image
 
 
 # function to do the edge detection by Sobel y
-def sobel_edge_detection_y(cutout_image, window_length, window_wide):
+def sobel_edge_detection_y(cutout_image, window_size):
 
     if not cutout_image:
         raise ValueError('The data set cannot be empty.')
 
-    image = np.array(cutout_image).reshape(window_wide, window_length)
+    image = np.array(cutout_image).reshape(window_size, window_size)
 
     sobel_y_image = cv.Sobel(image, cv.CV_64F, 0, 1, ksize=5)
+
+    print(sobel_y_image)
 
     return sobel_y_image
 
 
 # function to do the edge detection by Laplacian
-def laplacian_edge_detection(cutout_image, window_length, window_wide):
+def laplacian_edge_detection(cutout_image, window_size):
 
     if not cutout_image:
         raise ValueError('The data set cannot be empty.')
 
-    image = np.array(cutout_image).reshape(window_wide, window_length)
+    image = np.array(cutout_image).reshape(window_size, window_size)
 
     laplacian_image = cv.Laplacian(image, cv.CV_64F)
+
+    print(laplacian_image)
 
     return laplacian_image
 
@@ -346,22 +354,18 @@ def calculate_complexity(method="Entropy", window_size=W_SIZE, window_move_step=
                             try:
                                 if method == "Laplacian":
                                     complexity_value = laplacian_edge_detection(cutout_image,
-                                                                                window_size,
                                                                                 window_size)
 
                                 elif method == "Sobel_x":
                                     complexity_value = sobel_edge_detection_x(cutout_image,
-                                                                              window_size,
                                                                               window_size)
 
                                 elif method == "Sobel_y":
                                     complexity_value = sobel_edge_detection_y(cutout_image,
-                                                                              window_size,
                                                                               window_size)
 
                                 elif method == "Canny":
                                     complexity_value = canny_edge_detection(cutout_image,
-                                                                            window_size,
                                                                             window_size)
                                 else:
                                     complexity_value = entropy_calculation(cutout_image)
